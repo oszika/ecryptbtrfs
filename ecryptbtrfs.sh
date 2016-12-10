@@ -43,6 +43,11 @@ create() {
 
 	info "Adding to fstab"
 	safe sudo sh -c "echo '$volume/Private $name ecryptfs rw,user,noauto,exec,key=passphrase,ecryptfs_sig=$pass,ecryptfs_cipher=aes,ecryptfs_key_bytes=16,ecryptfs_passthrough,ecryptfs_fnek_sig=$pass,ecryptfs_unlink_sigs 0 0' >> /etc/fstab"
+
+	info "Setting user rights ($USER)"
+	safe sudo chown -R $USER:users $name
+	safe sudo chown -R $USER:users $volume
+	safe sudo chmod 500 $name
 }
 
 cmd=$1
