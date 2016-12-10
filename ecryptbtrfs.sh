@@ -50,10 +50,27 @@ create() {
 	safe sudo chmod 500 $name
 }
 
+# Try to mount with kernel keyring
+# If failed, retry after adding passphrase
+mount() {
+	name=`realpath $1`
+
+	/usr/bin/mount -i $name > /dev/null 2>&1
+
+	if [ $? -ne 0 ]; then
+		echo 'Passphrase:'
+		ecryptfs-add-passphrase > /dev/null
+		safe /usr/bin/mount -i $name
+	fi
+}
+
 cmd=$1
 
 case "$cmd" in
 	"create")
 		create $2
 	;;
+	"mount")
+		mount $2
+		;;
 esac
