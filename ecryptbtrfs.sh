@@ -21,16 +21,28 @@ safe()
 }
 
 create() {
-	name=$1
+	name=`realpath $1`
 	base=`basename $name`
 	dir=`dirname $name`
 	volume="$dir/.$base.ecryptfs"
 
-	info "Create dir $name"
+	info "Creating dir $name"
 	safe mkdir -p "$name"
 
-	info "Create subvolume $volume"
+	info "Creating subvolume $volume"
 	safe btrfs subvolume create "$volume"
+	safe mkdir -p "$volume/Private"
+
+	echo "Passphrase:"
+	pass=`ecryptfs-add-passphrase | perl -ne 'print $1 if /\[(.*)\]/'`
+
+	echo "Passphrase: (verify)"
+	pass2=`ecryptfs-add-passphrase | perl -ne 'print $1 if /\[(.*)\]/'`
+
+	[ $pass = $pass2 ] || error 'Passphrase mismatch'
+
+	info "Adding to fstab"
+	safe sudo sh -c "echo '$volume/Private $name ecryptfs rw,user,noauto,exec,key=passphrase,ecryptfs_sig=$pass,ecryptfs_cipher=aes,ecryptfs_key_bytes=16,ecryptfs_passthrough,ecryptfs_fnek_sig=$pass,ecryptfs_unlink_sigs 0 0' >> /etc/fstab"
 }
 
 cmd=$1
