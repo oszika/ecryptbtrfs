@@ -145,7 +145,7 @@ cmd=$1
 case "$cmd" in
 	"create")
 		create $2
-	;;
+		;;
 	"mount")
 		mount $2
 		;;
