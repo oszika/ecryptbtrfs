@@ -80,7 +80,7 @@ home() {
 <?xml version="1.0" encoding="utf-8" ?>
 <!DOCTYPE pam_mount SYSTEM "pam_mount.conf.xml.dtd">
 <pam_mount>
-        <debug enable="1" />
+        <debug enable="0" />
         <mntoptions allow="nosuid,nodev,loop,encryption,fsck,nonempty,allow_root,allow_other" />
         <mntoptions require="" />
         <logout wait="0" hup="0" term="0" kill="0" />
