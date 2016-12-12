@@ -122,7 +122,7 @@ session   optional  pam_permit.so
 EOF'
 	fi
 
-	safe chmod u+w $USER
+	safe chmod u+w $HOME
 	mkdir -p $HOME/.ecryptfs
 
 	info "Wrapping ecryptfs password"
@@ -131,14 +131,14 @@ EOF'
 
 	echo "Setting user pam conf"
 	safe cat << EOF > $HOME/.pam_mount.conf.xml
-<pam_volume>
-    <mount noroot="1" fstype="ecryptfs" path="$volume" mountpoint="$name"/>
+<pam_mount>
+    <volume noroot="1" fstype="ecryptfs" path="$volume" mountpoint="$name"/>
 </pam_mount>
 EOF
 	safe chmod 500 $HOME
 }
 
-[ "$USER" = "root"] && error "Do not be root!"
+[ "$USER" = "root" ] && error "Do not be root!"
 
 cmd=$1
 
