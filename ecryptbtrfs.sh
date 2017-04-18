@@ -20,6 +20,14 @@ safe()
 	"$@" || error "$@"
 }
 
+help()
+{
+	echo -e "Using ecryptfs over btrfs"
+	echo -e "$0 (create|mount|home) <volpath>"
+	echo -e "\t create <volpath>: create new encrypted volume at <volpath>"
+	exit -1
+}
+
 getVolume() {
 	base=`basename $1`
 	dir=`dirname $1`
@@ -151,5 +159,8 @@ case "$cmd" in
 		;;
 	"home")
 		home $2
+		;;
+	*)
+		help
 		;;
 esac
