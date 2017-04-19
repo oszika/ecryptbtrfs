@@ -24,7 +24,9 @@ Passphrase: (verify)
 
 ## Check encrypted volume ##
 ```
-$ ls /volumes/voltest/pouet
+$ echo pouet > /volumes/voltest/pouet
+
+$ ls /volumes/voltest/
 /volumes/voltest/pouet
 
 $ ls /volumes/.voltest.ecryptfs/
