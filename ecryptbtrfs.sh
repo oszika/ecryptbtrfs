@@ -24,7 +24,8 @@ help()
 {
 	echo -e "Using ecryptfs over btrfs"
 	echo -e "$0 (create|mount|home) <volpath>"
-	echo -e "\t create <volpath>: create new encrypted volume at <volpath>"
+	echo -e "\t create <volpath>:\tcreate new encrypted volume at <volpath>"
+	echo -e "\t mount <volpath>:\tmount encrypted volume located at <volpath>"
 	exit -1
 }
 
