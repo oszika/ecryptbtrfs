@@ -3,9 +3,9 @@ Using encryption over btrfs
 
 ## Selected scheme ##
 This solution uses ecryptfs filesystem over btrfs subvolume:
-  * <.volname>: btrfs subvolume
-  * <.volname.ecryptfs>: ecryptfs root
-  * <volname>: ecryptfs mount path
+  * \<.volname\>: btrfs subvolume
+  * \<.volname.ecryptfs\>: ecryptfs root
+  * \<volname\>: ecryptfs mount path
 
 ## Create encrypted volume ##
 `$ ecryptbtrfs.sh create /volumes/voltest`
