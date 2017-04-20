@@ -32,3 +32,8 @@ $ ls /volumes/voltest/
 $ ls /volumes/.voltest.ecryptfs/
 ECRYPTFS_FNEK_ENCRYPTED.FWaEAm4HEfHTMUQRparKutvJjA2s-IhrvvEwRlFqpRonsgrxKUmz3XSAf---
 ```
+
+## List encrypted volumes ##
+`$ sudo ecryptbtrfs.sh list /`
+`ID 312 gen 4533 parent 5 top level 5 path volumes/voltest`
+

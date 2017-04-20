@@ -23,9 +23,10 @@ safe()
 help()
 {
 	echo -e "Using ecryptfs over btrfs"
-	echo -e "$0 (create|mount|home) <volpath>"
+	echo -e "$0 (create|mount|home|list) <volpath>"
 	echo -e "\t create <volpath>:\tcreate new encrypted volume at <volpath>"
 	echo -e "\t mount <volpath>:\tmount encrypted volume located at <volpath>"
+	echo -e "\t list:\tlist encrypted volumes"
 	exit -1
 }
 
@@ -147,19 +148,27 @@ EOF
 	safe chmod 500 $HOME
 }
 
-[ "$USER" = "root" ] && error "Do not be root!"
+list() {
+	btrfs subvolume list $@ | perl -ne 'print "$1/$2\n" if /^(.*)\/\.([^\/]+)\.ecryptfs$/'
+}
 
 cmd=$1
+shift
+
+[ "$USER" = "root" ] && [ ! "$cmd" = 'list' ] && error "Do not be root!"
 
 case "$cmd" in
 	"create")
-		create $2
+		create $1
 		;;
 	"mount")
-		mount $2
+		mount $1
 		;;
 	"home")
-		home $2
+		home $1
+		;;
+	"list")
+		list $@
 		;;
 	*)
 		help
