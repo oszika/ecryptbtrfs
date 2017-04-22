@@ -3,10 +3,16 @@
 WHITE="\033[0m"
 RED="\033[31m"
 GREEN="\033[32m"
+CYAN="\033[36m"
 
 info()
 {
 	echo -e "$GREEN[info]\t$WHITE $@$WHITE"
+}
+
+debug()
+{
+	echo -e "$CYAN[debug]\t$WHITE $@$WHITE"
 }
 
 error()
@@ -23,28 +29,30 @@ safe()
 help()
 {
 	echo -e "Using ecryptfs over btrfs"
-	echo -e "$0 (create|mount|home|list) <volpath>"
+	echo -e "$0 (create|mount|umount|home|list) <volpath>"
 	echo -e "\t create <volpath>:\tcreate new encrypted volume at <volpath>"
 	echo -e "\t mount <volpath>:\tmount encrypted volume located at <volpath>"
+	echo -e "\t umount <volpath>:\tumount encrypted volume located at <volpath>"
 	echo -e "\t list:\tlist encrypted volumes"
 	exit -1
 }
 
+# Returns real btrfs subvolume .<name>.ecryptfs
 getVolume() {
 	base=`basename $1`
 	dir=`dirname $1`
-	echo "$dir/.$base.ecryptfs"
+	realpath "$dir/.$base.ecryptfs"
 }
 
 create() {
 	name=`realpath $1`
 	volume=`getVolume $name`
 
-	info "Creating dir $name"
-	safe mkdir -p "$name"
-
-	info "Creating subvolume $volume"
 	safe btrfs subvolume create "$volume"
+	debug "Subvolume $volume created"
+
+	safe mkdir -p "$name"
+	debug "Mount dir $name created"
 
 	echo "Passphrase:"
 	pass=`ecryptfs-add-passphrase | perl -ne 'print $1 if /\[(.*)\]/'`
@@ -54,27 +62,62 @@ create() {
 
 	[ $pass = $pass2 ] || error 'Passphrase mismatch'
 
-	info "Adding to fstab"
-	safe sudo sh -c "echo '$volume $name ecryptfs rw,user,noauto,exec,key=passphrase,ecryptfs_sig=$pass,ecryptfs_cipher=aes,ecryptfs_key_bytes=16,ecryptfs_passthrough,ecryptfs_fnek_sig=$pass,ecryptfs_unlink_sigs 0 0' >> /etc/fstab"
+	echo "$volume $name ecryptfs" > $volume.conf
+	echo "$pass" > $volume.sig
+	debug "Ecryptfs configuration written"
 
-	info "Setting user rights ($USER)"
 	safe sudo chown -R $USER:users $name
 	safe sudo chown -R $USER:users $volume
 	safe sudo chmod 500 $name
+	debug "User rights setted ($USER)"
 }
 
 # Try to mount with kernel keyring
 # If failed, retry after adding passphrase
 mount() {
 	name=`realpath $1`
+	volume=`getVolume $name`
 
-	/usr/bin/mount -i $name > /dev/null 2>&1
+	safe mkdir -p ~/.ecryptfs
+
+	[ -L ~/.ecryptfs/tmp.sig ] && safe rm ~/.ecryptfs/tmp.sig
+	[ -L ~/.ecryptfs/tmp.conf ] && safe rm ~/.ecryptfs/tmp.conf
+
+	safe ln -s $volume.sig ~/.ecryptfs/tmp.sig
+	safe ln -s $volume.conf ~/.ecryptfs/tmp.conf
+	debug "Ecryptfs configuration linked"
+
+	mount.ecryptfs_private tmp > /dev/null 2>&1
 
 	if [ $? -ne 0 ]; then
 		echo 'Passphrase:'
 		ecryptfs-add-passphrase > /dev/null
-		safe /usr/bin/mount -i $name
+		safe mount.ecryptfs_private tmp
 	fi
+
+	safe rm ~/.ecryptfs/tmp.sig
+	safe rm ~/.ecryptfs/tmp.conf
+
+	debug "Volume mounted"
+}
+
+umount() {
+	name=`realpath $1`
+	volume=`getVolume $name`
+
+	[ -L ~/.ecryptfs/tmp.sig ] && safe rm ~/.ecryptfs/tmp.sig
+	[ -L ~/.ecryptfs/tmp.conf ] && safe rm ~/.ecryptfs/tmp.conf
+
+	safe ln -s $volume.sig ~/.ecryptfs/tmp.sig
+	safe ln -s $volume.conf ~/.ecryptfs/tmp.conf
+	debug "Ecryptfs configuration linked"
+
+	safe umount.ecryptfs_private tmp
+
+	safe rm ~/.ecryptfs/tmp.sig
+	safe rm ~/.ecryptfs/tmp.conf
+
+	debug "Volume umounted"
 }
 
 home() {
@@ -85,7 +128,6 @@ home() {
 
 	pam_mount_file='/etc/security/pam_mount.conf.xml'
 	if [ ! -e $pam_mount_file ]; then
-		info "Updating $pam_mount_file"
 		safe sudo sh -c 'cat << EOF > '$pam_mount_file'
 <?xml version="1.0" encoding="utf-8" ?>
 <!DOCTYPE pam_mount SYSTEM "pam_mount.conf.xml.dtd">
@@ -99,12 +141,12 @@ home() {
         <luserconf name=".pam_mount.conf.xml" />
 </pam_mount>
 EOF'
+		debug "$pam_mount_file updated"
 	fi
 
 	system_auth_file='/etc/pam.d/system-auth'
 	grep -q ecryptfs $system_auth_file
 	if [ $? -ne 0 ]; then
-		info "Updating $system_auth_file"
 		safe sudo cp $system_auth_file $system_auth_file.old
 		safe sudo sh -c 'cat << EOF > '$system_auth_file'
 #%PAM-1.0
@@ -130,6 +172,7 @@ session   required  pam_unix.so
 session   optional  pam_ecryptfs.so unwrap
 session   optional  pam_permit.so
 EOF'
+		info "$system_auth_file updated"
 	fi
 
 	safe chmod u+w $HOME
@@ -145,6 +188,11 @@ EOF'
     <volume noroot="1" fstype="ecryptfs" path="$volume" mountpoint="$name"/>
 </pam_mount>
 EOF
+
+	key=`cat $volume.sig`
+	safe sudo sh -c "echo '$volume $name ecryptfs rw,user,noauto,exec,key=passphrase,ecryptfs_sig=$key,ecryptfs_cipher=aes,ecryptfs_key_bytes=16,ecryptfs_passthrough,ecryptfs_fnek_sig=$key,ecryptfs_unlink_sigs 0 0' >> /etc/fstab"
+	debug "Fstab updated"
+
 	safe chmod 500 $HOME
 }
 
@@ -155,7 +203,7 @@ list() {
 cmd=$1
 shift
 
-[ "$USER" = "root" ] && [ ! "$cmd" = 'list' ] && error "Do not be root!"
+#[ "$USER" = "root" ] && [ ! "$cmd" = 'list' ] && error "Do not be root!"
 
 case "$cmd" in
 	"create")
@@ -163,6 +211,9 @@ case "$cmd" in
 		;;
 	"mount")
 		mount $1
+		;;
+	"umount")
+		umount $1
 		;;
 	"home")
 		home $1
