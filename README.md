@@ -22,8 +22,10 @@ Passphrase: (verify)
 ```
 
 ## Mount/Umount encrypted volume ##
-`$ ecryptbtrfs.sh mount /volumes/voltest`
-`$ ecryptbtrfs.sh umount /volumes/voltest`
+```
+$ ecryptbtrfs.sh mount /volumes/voltest
+$ ecryptbtrfs.sh umount /volumes/voltest
+```
 
 ## Check encrypted volume ##
 ```
@@ -44,15 +46,20 @@ ID 312 gen 4533 parent 5 top level 5 path volumes/voltest
 
 ## Create home encrypted volume ##
 You need to create encrypted volume using sudo to write on /home.
-`$ sudo ecryptbtrfs.sh create /home/toto`
+```
+$ sudo ecryptbtrfs.sh create /home/toto
+```
 
 Reset owner
-`$ sudo chown toto /home/.toto.ecryptfs*`
-`$ sudo chown toto /home/toto`
+```
+$ sudo chown toto /home/.toto.ecryptfs*
+$ sudo chown toto /home/toto
+```
 
 Setting volume to be auto mounted at login
-`$ ecryptbtrfs.sh home /home/toto`
-
+```
+$ ecryptbtrfs.sh home /home/toto
+```
 ```
 /home/neolyn/git/ecryptbtrfs/ecryptbtrfs.sh home /home/toto
 [info]	 Wrapping ecryptfs password
