@@ -61,7 +61,6 @@ Setting volume to be auto mounted at login
 $ ecryptbtrfs.sh home /home/toto
 ```
 ```
-/home/neolyn/git/ecryptbtrfs/ecryptbtrfs.sh home /home/toto
 [info]	 Wrapping ecryptfs password
 Passphrase to wrap:
 Wrapping passphrase:
