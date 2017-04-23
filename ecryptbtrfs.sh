@@ -41,18 +41,24 @@ help()
 getVolume() {
 	base=`basename $1`
 	dir=`dirname $1`
-	realpath "$dir/.$base.ecryptfs"
+	realpath "$dir/.$base"
 }
 
 create() {
 	name=`realpath $1`
 	volume=`getVolume $name`
+	enc_root="$volume/root"
+	enc_conf="$volume/conf"
+	enc_sig="$volume/sig"
 
 	safe btrfs subvolume create "$volume"
 	debug "Subvolume $volume created"
 
 	safe mkdir -p "$name"
 	debug "Mount dir $name created"
+
+	safe mkdir -p "$enc_root"
+	debug "Ecryptfs root $enc_root created"
 
 	echo "Passphrase:"
 	pass=`ecryptfs-add-passphrase | perl -ne 'print $1 if /\[(.*)\]/'`
@@ -62,8 +68,8 @@ create() {
 
 	[ $pass = $pass2 ] || error 'Passphrase mismatch'
 
-	echo "$volume $name ecryptfs" > $volume.conf
-	echo "$pass" > $volume.sig
+	echo "$enc_root $name ecryptfs" > $enc_conf
+	echo -e "$pass\n$pass" > $enc_sig
 	debug "Ecryptfs configuration written"
 
 	safe sudo chown -R $USER:users $name
@@ -77,14 +83,17 @@ create() {
 mount() {
 	name=`realpath $1`
 	volume=`getVolume $name`
+	enc_root="$volume/root"
+	enc_conf="$volume/conf"
+	enc_sig="$volume/sig"
 
 	safe mkdir -p ~/.ecryptfs
 
 	[ -L ~/.ecryptfs/tmp.sig ] && safe rm ~/.ecryptfs/tmp.sig
 	[ -L ~/.ecryptfs/tmp.conf ] && safe rm ~/.ecryptfs/tmp.conf
 
-	safe ln -s $volume.sig ~/.ecryptfs/tmp.sig
-	safe ln -s $volume.conf ~/.ecryptfs/tmp.conf
+	safe ln -s $enc_sig ~/.ecryptfs/tmp.sig
+	safe ln -s $enc_conf ~/.ecryptfs/tmp.conf
 	debug "Ecryptfs configuration linked"
 
 	mount.ecryptfs_private tmp > /dev/null 2>&1
@@ -104,12 +113,15 @@ mount() {
 umount() {
 	name=`realpath $1`
 	volume=`getVolume $name`
+	enc_root="$volume/root"
+	enc_conf="$volume/conf"
+	enc_sig="$volume/sig"
 
 	[ -L ~/.ecryptfs/tmp.sig ] && safe rm ~/.ecryptfs/tmp.sig
 	[ -L ~/.ecryptfs/tmp.conf ] && safe rm ~/.ecryptfs/tmp.conf
 
-	safe ln -s $volume.sig ~/.ecryptfs/tmp.sig
-	safe ln -s $volume.conf ~/.ecryptfs/tmp.conf
+	safe ln -s $enc_sig ~/.ecryptfs/tmp.sig
+	safe ln -s $enc_conf ~/.ecryptfs/tmp.conf
 	debug "Ecryptfs configuration linked"
 
 	safe umount.ecryptfs_private tmp
@@ -123,6 +135,9 @@ umount() {
 home() {
 	name=`realpath $1`
 	volume=`getVolume $name`
+	enc_root="$volume/root"
+	enc_conf="$volume/conf"
+	enc_sig="$volume/sig"
 
 	# TODO: check if ecryptbtrfs volume exists and if unmounted
 
@@ -185,12 +200,12 @@ EOF'
 	echo "Setting user pam conf"
 	safe cat << EOF > $HOME/.pam_mount.conf.xml
 <pam_mount>
-    <volume noroot="1" fstype="ecryptfs" path="$volume" mountpoint="$name"/>
+    <volume noroot="1" fstype="ecryptfs" path="$enc_root" mountpoint="$name"/>
 </pam_mount>
 EOF
 
-	key=`cat $volume.sig`
-	safe sudo sh -c "echo '$volume $name ecryptfs rw,user,noauto,exec,key=passphrase,ecryptfs_sig=$key,ecryptfs_cipher=aes,ecryptfs_key_bytes=16,ecryptfs_passthrough,ecryptfs_fnek_sig=$key,ecryptfs_unlink_sigs 0 0' >> /etc/fstab"
+	key=`head -n 1 $enc_sig`
+	safe sudo sh -c "echo '$enc_root $name ecryptfs rw,user,noauto,exec,key=passphrase,ecryptfs_sig=$key,ecryptfs_cipher=aes,ecryptfs_key_bytes=16,ecryptfs_passthrough,ecryptfs_fnek_sig=$key,ecryptfs_unlink_sigs 0 0' >> /etc/fstab"
 	debug "Fstab updated"
 
 	safe chmod 500 $HOME

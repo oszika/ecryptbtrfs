@@ -4,9 +4,10 @@ Using encryption over btrfs
 ## Selected scheme ##
 This solution uses ecryptfs filesystem over btrfs subvolume:
   * \<volname\>: ecryptfs mount path
-  * .\<volname\>.ecryptfs: btrfs subvolume & ecryptfs root
-  * .\<volname\>.ecryptfs.conf: ecryptfs configuration
-  * .\<volname\>.ecryptfs.sig: key signature
+  * .\<volname\>: btrfs subvolume
+  * .\<volname\>/ecryptfs/root: ecryptfs root
+  * .\<volname\>/ecryptfs/conf: ecryptfs configuration
+  * .\<volname\>/ecryptfs/sig: key signature
   * /etc/fstab: used to mount home encrypted volumes
 
 ## Create encrypted volume ##
@@ -52,8 +53,8 @@ $ sudo ecryptbtrfs.sh create /home/toto
 
 Reset owner
 ```
-$ sudo chown toto /home/.toto.ecryptfs*
-$ sudo chown toto /home/toto
+$ sudo chown -R toto /home/.toto
+$ sudo chown -R toto /home/toto
 ```
 
 Setting volume to be auto mounted at login
