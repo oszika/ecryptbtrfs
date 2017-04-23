@@ -10,9 +10,8 @@ This solution uses ecryptfs filesystem over btrfs subvolume:
   * /etc/fstab: used to mount home encrypted volumes
 
 ## Create encrypted volume ##
-`$ ecryptbtrfs.sh create /volumes/voltest`
+`$ ebtrfs create /volumes/voltest`
 ```
-./ecryptbtrfs.sh create /volumes/voltest
 Create subvolume '/volumes/.voltest.ecryptfs'
 [debug]	 Subvolume /volumes/.voltest.ecryptfs created
 [debug]	 Mount dir /volumes/voltest created
@@ -25,8 +24,8 @@ Passphrase: (verify)
 
 ## Mount/Umount encrypted volume ##
 ```
-$ ecryptbtrfs.sh mount /volumes/voltest
-$ ecryptbtrfs.sh umount /volumes/voltest
+$ ebtrfs mount /volumes/voltest
+$ ebtrfs umount /volumes/voltest
 ```
 
 ## Check encrypted volume ##
@@ -41,13 +40,13 @@ ECRYPTFS_FNEK_ENCRYPTED.FWaEAm4HEfHTMUQRparKutvJjA2s-IhrvvEwRlFqpRonsgrxKUmz3XSA
 ```
 
 ## List encrypted volumes ##
-`$ sudo ecryptbtrfs.sh list /`
+`$ sudo ebtrfs list /`
 ```
 ID 312 gen 4533 parent 5 top level 5 path volumes/voltest
 ```
 
 ## Take snapshot ##
-`./ecryptbtrfs.sh snapshot -r /volumes/voltest /volumes/voltest.$(date +%Y-%m-%d-%H:%M:%S)`
+`ebtrfs snapshot -r /volumes/voltest /volumes/voltest.$(date +%Y-%m-%d-%H:%M:%S)`
 ```
 Create a readonly snapshot of '/volumes/.voltest' in '/volumes/.voltest.2017-04-23-10:03:40.ecryptfs'
 ```
@@ -55,7 +54,7 @@ Create a readonly snapshot of '/volumes/.voltest' in '/volumes/.voltest.2017-04-
 ## Create home encrypted volume ##
 You need to create encrypted volume using sudo to write on /home.
 ```
-$ sudo ecryptbtrfs.sh create /home/toto
+$ sudo ebtrfs create /home/toto
 ```
 
 Reset owner
@@ -66,7 +65,7 @@ $ sudo chown -R toto /home/toto
 
 Setting volume to be auto mounted at login
 ```
-$ ecryptbtrfs.sh home /home/toto
+$ ebtrfs home /home/toto
 ```
 ```
 [info]	 Wrapping ecryptfs password

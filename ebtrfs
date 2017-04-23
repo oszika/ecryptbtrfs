@@ -1,0 +1,78 @@
+#!/bin/sh
+
+# Load common functions
+
+file=`realpath $0`
+dir=`dirname $file`
+source $dir/ecryptfs.sh
+
+# Btrfs commands
+
+help()
+{
+	name=`basename $0`
+	echo -e "Using ecryptfs over btrfs"
+	echo -e "$name ((create|mount|umount|home|snapshot) <volpath> | list)"
+	echo -e "\t create <volpath>:\tcreate new encrypted volume at <volpath>"
+	echo -e "\t mount <volpath>:\tmount encrypted volume located at <volpath>"
+	echo -e "\t umount <volpath>:\tumount encrypted volume located at <volpath>"
+	echo -e "\t snapshot <volpath>:\tcreate snapshot of encrypted volume"
+	echo -e "\t list:\tlist encrypted volumes"
+	exit -1
+}
+
+create() {
+	name=`realpath $1`
+	volume=`getVolume $name`
+
+	safe btrfs subvolume create "$volume"
+	debug "Subvolume $volume created"
+
+	ecryptfs_init $name $volume
+}
+
+list() {
+	btrfs subvolume list $@ | perl -ne 'print "$1/$2\n" if /^(.*)\/\.([^\/]+)\.ecryptfs$/'
+}
+
+snapshot() {
+	opts=${@: 1:$#-2}
+	src=${@: -2:1}
+	dst=${@: -1:1}
+
+	# btrfs src & dst
+	n_src=`realpath $src`
+	v_src=`getVolume $n_src`
+	n_dst=`realpath $dst`
+	v_dst=`getVolume $n_dst`
+
+	safe mkdir -p $n_dst
+	safe btrfs subvolume snapshot $opts $v_src $v_dst
+}
+
+cmd=$1
+shift
+
+case "$cmd" in
+	"create")
+		create $1
+		;;
+	"mount")
+		ecryptfs_mount $1
+		;;
+	"umount")
+		ecryptfs_umount $1
+		;;
+	"home")
+		ecryptfs_home $1
+		;;
+	"list")
+		list $@
+		;;
+	"snapshot")
+		snapshot $@
+		;;
+	*)
+		help
+		;;
+esac

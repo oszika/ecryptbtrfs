@@ -26,33 +26,20 @@ safe()
 	"$@" || error "$@"
 }
 
-help()
-{
-	echo -e "Using ecryptfs over btrfs"
-	echo -e "$0 ((create|mount|umount|home|snapshot) <volpath> | list)"
-	echo -e "\t create <volpath>:\tcreate new encrypted volume at <volpath>"
-	echo -e "\t mount <volpath>:\tmount encrypted volume located at <volpath>"
-	echo -e "\t umount <volpath>:\tumount encrypted volume located at <volpath>"
-	echo -e "\t snapshot <volpath>:\tcreate snapshot of encrypted volume"
-	echo -e "\t list:\tlist encrypted volumes"
-	exit -1
-}
 
-# Returns real btrfs subvolume .<name>.ecryptfs
+# Returns real name subvolume: .<name>.ecryptfs
 getVolume() {
 	base=`basename $1`
 	dir=`dirname $1`
 	realpath "$dir/.$base.ecryptfs"
 }
 
-create() {
-	name=`realpath $1`
-	volume=`getVolume $name`
+# Init ecryptfs conf for volume
+ecryptfs_init() {
+	name=$1
+	volume=$2
 	enc_root="$volume/root"
 	enc_sig="$volume/sig"
-
-	safe btrfs subvolume create "$volume"
-	debug "Subvolume $volume created"
 
 	safe mkdir -p "$name"
 	debug "Mount dir $name created"
@@ -79,7 +66,7 @@ create() {
 
 # Try to mount with kernel keyring
 # If failed, retry after adding passphrase
-mount() {
+ecryptfs_mount() {
 	name=`realpath $1`
 	volume=`getVolume $name`
 	enc_root="$volume/root"
@@ -108,7 +95,7 @@ mount() {
 	debug "Volume mounted"
 }
 
-umount() {
+ecryptfs_umount() {
 	name=`realpath $1`
 	volume=`getVolume $name`
 	enc_root="$volume/root"
@@ -129,7 +116,7 @@ umount() {
 	debug "Volume umounted"
 }
 
-home() {
+ecryptfs_home() {
 	name=`realpath $1`
 	volume=`getVolume $name`
 	enc_root="$volume/root"
@@ -207,51 +194,3 @@ EOF
 	safe chmod 500 $HOME
 }
 
-list() {
-	btrfs subvolume list $@ | perl -ne 'print "$1/$2\n" if /^(.*)\/\.([^\/]+)\.ecryptfs$/'
-}
-
-snapshot() {
-	opts=${@: 1:$#-2}
-	src=${@: -2:1}
-	dst=${@: -1:1}
-
-	# btrfs src & dst
-	n_src=`realpath $src`
-	v_src=`getVolume $n_src`
-	n_dst=`realpath $dst`
-	v_dst=`getVolume $n_dst`
-
-	safe mkdir -p $n_dst
-	safe btrfs subvolume snapshot $opts $v_src $v_dst
-}
-
-echo $0
-exit
-
-cmd=$1
-shift
-
-case "$cmd" in
-	"create")
-		create $1
-		;;
-	"mount")
-		mount $1
-		;;
-	"umount")
-		umount $1
-		;;
-	"home")
-		home $1
-		;;
-	"list")
-		list $@
-		;;
-	"snapshot")
-		snapshot $@
-		;;
-	*)
-		help
-		;;
-esac
