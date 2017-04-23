@@ -29,10 +29,11 @@ safe()
 help()
 {
 	echo -e "Using ecryptfs over btrfs"
-	echo -e "$0 (create|mount|umount|home|list) <volpath>"
+	echo -e "$0 ((create|mount|umount|home|snapshot) <volpath> | list)"
 	echo -e "\t create <volpath>:\tcreate new encrypted volume at <volpath>"
 	echo -e "\t mount <volpath>:\tmount encrypted volume located at <volpath>"
 	echo -e "\t umount <volpath>:\tumount encrypted volume located at <volpath>"
+	echo -e "\t snapshot <volpath>:\tcreate snapshot of encrypted volume"
 	echo -e "\t list:\tlist encrypted volumes"
 	exit -1
 }
@@ -41,14 +42,13 @@ help()
 getVolume() {
 	base=`basename $1`
 	dir=`dirname $1`
-	realpath "$dir/.$base"
+	realpath "$dir/.$base.ecryptfs"
 }
 
 create() {
 	name=`realpath $1`
 	volume=`getVolume $name`
 	enc_root="$volume/root"
-	enc_conf="$volume/conf"
 	enc_sig="$volume/sig"
 
 	safe btrfs subvolume create "$volume"
@@ -68,7 +68,6 @@ create() {
 
 	[ $pass = $pass2 ] || error 'Passphrase mismatch'
 
-	echo "$enc_root $name ecryptfs" > $enc_conf
 	echo -e "$pass\n$pass" > $enc_sig
 	debug "Ecryptfs configuration written"
 
@@ -90,11 +89,10 @@ mount() {
 	safe mkdir -p ~/.ecryptfs
 
 	[ -L ~/.ecryptfs/tmp.sig ] && safe rm ~/.ecryptfs/tmp.sig
-	[ -L ~/.ecryptfs/tmp.conf ] && safe rm ~/.ecryptfs/tmp.conf
 
 	safe ln -s $enc_sig ~/.ecryptfs/tmp.sig
-	safe ln -s $enc_conf ~/.ecryptfs/tmp.conf
-	debug "Ecryptfs configuration linked"
+	echo "$enc_root $name ecryptfs" > ~/.ecryptfs/tmp.conf
+	debug "Ecryptfs configuration written"
 
 	mount.ecryptfs_private tmp > /dev/null 2>&1
 
@@ -118,10 +116,9 @@ umount() {
 	enc_sig="$volume/sig"
 
 	[ -L ~/.ecryptfs/tmp.sig ] && safe rm ~/.ecryptfs/tmp.sig
-	[ -L ~/.ecryptfs/tmp.conf ] && safe rm ~/.ecryptfs/tmp.conf
 
 	safe ln -s $enc_sig ~/.ecryptfs/tmp.sig
-	safe ln -s $enc_conf ~/.ecryptfs/tmp.conf
+	echo "enc_root $name ecryptfs" > ~/.ecryptfs/tmp.conf
 	debug "Ecryptfs configuration linked"
 
 	safe umount.ecryptfs_private tmp
@@ -136,7 +133,6 @@ home() {
 	name=`realpath $1`
 	volume=`getVolume $name`
 	enc_root="$volume/root"
-	enc_conf="$volume/conf"
 	enc_sig="$volume/sig"
 
 	# TODO: check if ecryptbtrfs volume exists and if unmounted
@@ -215,10 +211,23 @@ list() {
 	btrfs subvolume list $@ | perl -ne 'print "$1/$2\n" if /^(.*)\/\.([^\/]+)\.ecryptfs$/'
 }
 
+snapshot() {
+	opts=${@: 1:$#-2}
+	src=${@: -2:1}
+	dst=${@: -1:1}
+
+	# btrfs src & dst
+	n_src=`realpath $src`
+	v_src=`getVolume $n_src`
+	n_dst=`realpath $dst`
+	v_dst=`getVolume $n_dst`
+
+	safe mkdir -p $n_dst
+	safe btrfs subvolume snapshot $opts $v_src $v_dst
+}
+
 cmd=$1
 shift
-
-#[ "$USER" = "root" ] && [ ! "$cmd" = 'list' ] && error "Do not be root!"
 
 case "$cmd" in
 	"create")
@@ -235,6 +244,9 @@ case "$cmd" in
 		;;
 	"list")
 		list $@
+		;;
+	"snapshot")
+		snapshot $@
 		;;
 	*)
 		help
