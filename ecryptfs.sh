@@ -226,6 +226,9 @@ snapshot() {
 	safe btrfs subvolume snapshot $opts $v_src $v_dst
 }
 
+echo $0
+exit
+
 cmd=$1
 shift
 
