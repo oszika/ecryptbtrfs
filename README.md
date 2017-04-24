@@ -1,4 +1,4 @@
-# ecryptbtrfs #
+# ebtrfs/efs #
 Using encryption over btrfs (or any filesystem without snapshot feature)
 
 ## Selected scheme ##
