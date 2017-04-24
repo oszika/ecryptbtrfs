@@ -1,0 +1,56 @@
+#!/bin/sh
+
+# Load common functions
+
+file=`realpath $0`
+dir=`dirname $file`
+source $dir/ecryptfs.sh
+
+# Btrfs commands
+
+help()
+{
+	name=`basename $0`
+	echo -e "Using ecryptfs over any filesystem"
+	echo -e "$name ((create|mount|umount) <volpath> | list <path>)"
+	echo -e "\t create <volpath>:\tcreate new encrypted volume at <volpath>"
+	echo -e "\t mount <volpath>:\tmount encrypted volume located at <volpath>"
+	echo -e "\t umount <volpath>:\tumount encrypted volume located at <volpath>"
+	echo -e "\t list <path>:\tlist encrypted volumes in path"
+	exit -1
+}
+
+create() {
+	name=`realpath $1`
+	volume=`getVolume $name`
+
+	safe mkdir -p "$volume"
+	debug "Volume $volume created"
+
+	ecryptfs_init $name $volume
+}
+
+list() {
+	find $1 -name "*.ecryptfs"
+}
+
+cmd=$1
+shift
+
+case "$cmd" in
+	"create")
+		create $1
+		;;
+	"mount")
+		ecryptfs_mount $1
+		;;
+	"umount")
+		ecryptfs_umount $1
+		;;
+	"list")
+		list $1
+		;;
+	*)
+		help
+		;;
+esac
