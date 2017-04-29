@@ -1,22 +1,25 @@
-# ebtrfs/efs #
+* ebtrfs/efs
 Using encryption over btrfs (or any filesystem without snapshot feature)
 
-## Selected scheme ##
+** Selected scheme
 This solution uses ecryptfs filesystem over btrfs subvolume:
-  * \<volname\>: ecryptfs mount path
-  * .\<volname\>.ecryptfs: btrfs subvolume (or simple dir)
-  * .\<volname\>.ecryptfs/root: ecryptfs root
-  * .\<volname\>.ecryptfs/sig: key signature
-  * /etc/fstab: used to mount home encrypted volumes
+  - <volname>: ecryptfs mount path
+  - .<volname>.ecryptfs: btrfs subvolume (or simple dir)
+  - .<volname>.ecryptfs/root: ecryptfs root
+  - .<volname>.ecryptfs/sig: key signature
+  - /etc/fstab: used to mount home encrypted volumes
 
-## Scripts ##
-  * ebtrfs: ecryptfs over btrfs
-  * efs: ecryptfs over any filesystem
+** Scripts
+  - ebtrfs: ecryptfs over btrfs
+  - efs: ecryptfs over any filesystem
 With ebtrfs, subvolumes are encrypted. Otherwise, a simple dir is used.
 
-## Create encrypted volume ##
-`$ ebtrfs create /volumes/voltest`
-```
+** Create encrypted volume
+#+BEGIN_SRC sh
+$ ebtrfs create /volumes/voltest
+#+END_SRC
+
+#+BEGIN_SRC sh
 Create subvolume '/volumes/.voltest.ecryptfs'
 [debug]	 Subvolume /volumes/.voltest.ecryptfs created
 [debug]	 Mount dir /volumes/voltest created
@@ -25,16 +28,16 @@ Passphrase:
 Passphrase: (verify)
 [debug]	 Ecryptfs configuration written
 [debug]	 User rights setted (user)
-```
+#+END_SRC
 
-## Mount/Umount encrypted volume ##
-```
+** Mount/Umount encrypted volume
+#+BEGIN_SRC sh
 $ ebtrfs mount /volumes/voltest
 $ ebtrfs umount /volumes/voltest
-```
+#+END_SRC
 
-## Check encrypted volume ##
-```
+** Check encrypted volume
+#+BEGIN_SRC sh
 $ echo pouet > /volumes/voltest/pouet
 
 $ ls /volumes/voltest/
@@ -42,40 +45,45 @@ $ ls /volumes/voltest/
 
 $ ls /volumes/.voltest.ecryptfs/root
 ECRYPTFS_FNEK_ENCRYPTED.FWaEAm4HEfHTMUQRparKutvJjA2s-IhrvvEwRlFqpRonsgrxKUmz3XSAf---
-```
+#+END_SRC
 
-## List encrypted volumes ##
-`$ sudo ebtrfs list /`
-```
+** List encrypted volumes
+#+BEGIN_SRC sh
+$ sudo ebtrfs list /
+#+END_SRC
+
+#+BEGIN_SRC sh
 ID 312 gen 4533 parent 5 top level 5 path volumes/voltest
-```
+#+END_SRC
 
-## Take snapshot ##
-`ebtrfs snapshot -r /volumes/voltest /volumes/voltest.$(date +%Y-%m-%d-%H:%M:%S)`
-```
+** Take snapshot
+#+BEGIN_SRC sh
+$ ebtrfs snapshot -r /volumes/voltest /volumes/voltest.$(date +%Y-%m-%d-%H:%M:%S)
+#+END_SRC
+
+#+BEGIN_SRC sh
 Create a readonly snapshot of '/volumes/.voltest' in '/volumes/.voltest.2017-04-23-10:03:40.ecryptfs'
-```
+#+END_SRC
 
-## Create home encrypted volume ##
-You need to create encrypted volume using sudo to write on /home.
-```
+** Create home encrypted volume
+*** You need to create encrypted volume using sudo to write on /home.
+#+BEGIN_SRC sh
 $ sudo ebtrfs create /home/toto
-```
-
-Reset owner
-```
+#+END_SRC
+*** Reset owner
+#+BEGIN_SRC sh
 $ sudo chown -R toto /home/.toto
 $ sudo chown -R toto /home/toto
-```
-
-Setting volume to be auto mounted at login
-```
+#+END_SRC
+*** Setting volume to be auto mounted at login
+#+BEGIN_SRC sh
 $ ebtrfs home /home/toto
-```
-```
+#+END_SRC
+
+#+BEGIN_SRC sh
 [info]	 Wrapping ecryptfs password
 Passphrase to wrap:
 Wrapping passphrase:
 Setting user pam conf
 [debug]	 Fstab updated
-```
+#+END_SRC
