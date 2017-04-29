@@ -11,7 +11,7 @@ This solution uses ecryptfs filesystem over btrfs subvolume:
 
 ** Install
 #+BEGIN_SRC sh
-wget -q -O ecrypbtrfs_installer.sh https://raw.githubusercontent.com/oszika/ecryptbtrfs/master/installer.sh && sudo sh ecryptbtrfs_installer.sh; rm ecryptbtrfs-installer.sh
+wget -q -O ecrypbtrfs_installer.sh https://raw.githubusercontent.com/oszika/ecryptbtrfs/master/installer.sh && chmod u+x ecryptbtrfs_installer.sh && sudo ./ecryptbtrfs_installer.sh; rm ecryptbtrfs-installer.sh
 #+END_SRC
 
 ** Scripts
