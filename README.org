@@ -58,7 +58,7 @@ ID 312 gen 4533 parent 5 top level 5 path volumes/voltest
 
 ** Take snapshot
 #+BEGIN_SRC sh
-ebtrfs snapshot -r /volumes/voltest /volumes/voltest.$(date +%Y-%m-%d-%H:%M:%S)
+$ ebtrfs snapshot -r /volumes/voltest /volumes/voltest.$(date +%Y-%m-%d-%H:%M:%S)
 #+END_SRC
 
 #+BEGIN_SRC sh
