@@ -9,6 +9,11 @@ This solution uses ecryptfs filesystem over btrfs subvolume:
   - .<volname>.ecryptfs/sig: key signature
   - /etc/fstab: used to mount home encrypted volumes
 
+** Install
+#+BEGIN_SRC sh
+wget -q -O ecrypbtrfs_installer.sh https://raw.githubusercontent.com/oszika/ecryptbtrfs/master/installer.sh && sudo sh ecryptbtrfs_installer.sh; rm ecryptbtrfs-installer.sh
+#+END_SRC
+
 ** Scripts
   - ebtrfs: ecryptfs over btrfs
   - efs: ecryptfs over any filesystem
