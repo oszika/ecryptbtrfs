@@ -3,10 +3,10 @@ Using encryption over btrfs (or any filesystem without snapshot feature)
 
 ** Selected scheme
 This solution uses ecryptfs filesystem over btrfs subvolume:
-  - \<volname\>: ecryptfs mount path
-  - .\<volname\>.ecryptfs: btrfs subvolume (or simple dir)
-  - .\<volname\>.ecryptfs/root: ecryptfs root
-  - .\<volname\>.ecryptfs/sig: key signature
+  - <volname>: ecryptfs mount path
+  - .<volname>.ecryptfs: btrfs subvolume (or simple dir)
+  - .<volname>.ecryptfs/root: ecryptfs root
+  - .<volname>.ecryptfs/sig: key signature
   - /etc/fstab: used to mount home encrypted volumes
 
 ** Scripts
@@ -15,8 +15,10 @@ This solution uses ecryptfs filesystem over btrfs subvolume:
 With ebtrfs, subvolumes are encrypted. Otherwise, a simple dir is used.
 
 ** Create encrypted volume
-`$ ebtrfs create /volumes/voltest`
-```
+#+BEGIN_SRC sh
+$ ebtrfs create /volumes/voltest
+#+END_SRC
+#+BEGIN_SRC sh
 Create subvolume '/volumes/.voltest.ecryptfs'
 [debug]	 Subvolume /volumes/.voltest.ecryptfs created
 [debug]	 Mount dir /volumes/voltest created
@@ -25,7 +27,7 @@ Passphrase:
 Passphrase: (verify)
 [debug]	 Ecryptfs configuration written
 [debug]	 User rights setted (user)
-```
+#+END_SRC
 
 ** Mount/Umount encrypted volume
 ```
