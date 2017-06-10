@@ -31,6 +31,16 @@ create() {
 	ecryptfs_init $name $volume
 }
 
+delete() {
+	name=`realpath $1`
+	volume=`getVolume $name`
+
+	safe btrfs subvolume delete "$volume"
+	safe rmdir $name
+
+	debug "Subvolume $volume deleted"
+}
+
 list() {
 	btrfs subvolume list $@ | perl -ne 'print "$1/$2\n" if /^(.*)\/\.([^\/]+)\.ecryptfs$/'
 }
@@ -69,6 +79,9 @@ shift
 case "$cmd" in
 	"create")
 		create $1
+		;;
+	"delete")
+		delete $1
 		;;
 	"mount")
 		ecryptfs_mount $1
