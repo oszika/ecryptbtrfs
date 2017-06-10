@@ -62,12 +62,22 @@ ID 312 gen 4533 parent 5 top level 5 path volumes/voltest
 #+END_SRC
 
 ** Take snapshot
+First snapshot is named as 'init'. The others are generated with dates.
+
 #+BEGIN_SRC sh
-$ ebtrfs snapshot -r /volumes/voltest /volumes/voltest.$(date +%Y-%m-%d-%H:%M:%S)
+$ ebtrfs snapshot -r /volumes/voltest
 #+END_SRC
 
 #+BEGIN_SRC sh
-Create a readonly snapshot of '/volumes/.voltest' in '/volumes/.voltest.2017-04-23-10:03:40.ecryptfs'
+Create a readonly snapshot of '/volume/.voltest.ecryptfs' in '/volumes/.voltest.ecryptfs/.snaps/.init.ecryptfs'
+#+END_SRC
+
+#+BEGIN_SRC sh
+$ ebtrfs snapshot -r /volumes/voltest
+#+END_SRC
+
+#+BEGIN_SRC sh
+Create a readonly snapshot of '/volume/.voltest.ecryptfs' in '/volumes/.voltest.ecryptfs/.snaps/.2017-06-10-16:05:06.ecryptfs'
 #+END_SRC
 
 ** Create home encrypted volume

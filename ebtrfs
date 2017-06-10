@@ -36,17 +36,30 @@ list() {
 }
 
 snapshot() {
-	opts=${@: 1:$#-2}
-	src=${@: -2:1}
-	dst=${@: -1:1}
+	[ $# -eq 0 ] && error "Missing volume to snapshot"
+	[ $# -gt 1 ] &&	opts=${@: 1:$#-1}
+	src=${@: -1:1}
 
-	# btrfs src & dst
+	# btrfs src
 	n_src=`realpath $src`
 	v_src=`getVolume $n_src`
-	n_dst=`realpath $dst`
+
+	# snaps path
+	mkdir -p $v_src/.snaps
+
+	# new snapshot dst
+	if [ -e "$v_src/.snaps/init" ]; then
+		n_dst="$v_src/.snaps/$(date +%Y-%m-%d-%H:%M:%S)"
+	else
+		n_dst="$v_src/.snaps/init"
+	fi
+
 	v_dst=`getVolume $n_dst`
 
+	debug "Take new snapshot: $n_dst"
+
 	safe mkdir -p $n_dst
+	safe chmod 500 $n_dst
 	safe btrfs subvolume snapshot $opts $v_src $v_dst
 }
 
