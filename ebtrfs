@@ -21,6 +21,12 @@ help()
 	exit -1
 }
 
+getSnaps() {
+	base=`basename $1`
+	dir=`dirname $1`
+	realpath "$dir/.$base.snaps"
+}
+
 create() {
 	name=`realpath $1`
 	volume=`getVolume $name`
@@ -53,15 +59,16 @@ snapshot() {
 	# btrfs src
 	n_src=`realpath $src`
 	v_src=`getVolume $n_src`
+	s_src=`getSnaps $n_src`
 
 	# snaps path
-	mkdir -p $v_src/.snaps
+	mkdir -p $s_src
 
 	# new snapshot dst
-	if [ -e "$v_src/.snaps/init" ]; then
-		n_dst="$v_src/.snaps/$(date +%Y-%m-%d-%H:%M:%S)"
+	if [ -e "$s_src/init" ]; then
+		n_dst="$s_src/$(date +%Y-%m-%d-%H:%M:%S)"
 	else
-		n_dst="$v_src/.snaps/init"
+		n_dst="$s_src/init"
 	fi
 
 	v_dst=`getVolume $n_dst`
