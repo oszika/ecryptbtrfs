@@ -109,6 +109,8 @@ syncsnaps() {
 		echo "Syncing $s_src/init"
 		safe sudo btrfs send $vol | safe sudo btrfs receive $dst
 		safe mkdir $dst/init
+	else
+		echo "$s_src/init already synced"
 	fi
 
 	# Sync others snapshots
