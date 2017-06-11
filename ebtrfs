@@ -12,12 +12,13 @@ help()
 {
 	name=`basename $0`
 	echo -e "Using ecryptfs over btrfs"
-	echo -e "$name ((create|mount|umount|home|snapshot) <volpath> | list)"
+	echo -e "$name ((create|mount|umount|home|snapshot) <volpath> | list | sync <volsrc> <voldst>)"
 	echo -e "\t create <volpath>:\tcreate new encrypted volume at <volpath>"
 	echo -e "\t mount <volpath>:\tmount encrypted volume located at <volpath>"
 	echo -e "\t umount <volpath>:\tumount encrypted volume located at <volpath>"
 	echo -e "\t snapshot <volpath>:\tcreate snapshot of encrypted volume"
 	echo -e "\t list:\tlist encrypted volumes"
+	echo -e "\t sync <volsrc> <voldst>:\tsync all snapshots from source volume to destination volume"
 	exit -1
 }
 
@@ -78,6 +79,59 @@ snapshot() {
 	safe mkdir -p $n_dst
 	safe chmod 500 $n_dst
 	safe btrfs subvolume snapshot $opts $v_src $v_dst
+	sync
+}
+
+syncsnaps() {
+	src=$1
+	dst=$2
+
+	[ "$src" = "" ] && error "Empty source"
+	[ "$dst" = "" ] && error "Empty destination"
+
+	s_src=`getSnaps $src`
+
+	# Destination volume no exists
+	if [ ! -e $dst ]; then
+		safe btrfs subvolume create $dst
+	fi
+
+	# First snapshot
+	if [ ! -e "$s_src/init" ]; then
+		snapshot -r $src
+	fi
+
+	# First sync
+	if [ ! -e $dst/init ]; then
+		vol=`getVolume $s_src/init`
+
+		# first sync
+		echo "Syncing $s_src/init"
+		safe sudo btrfs send $vol | safe sudo btrfs receive $dst
+		safe mkdir $dst/init
+	fi
+
+	# Sync others snapshots
+	prev="$s_src/.init.ecryptfs"
+	for snap in $s_src/*; do
+		if [ $snap = "$s_src/." ] || [ $snap = "$s_src/.." ] || [ $snap = "$s_src/init" ]; then
+			continue
+		fi
+
+		b_snap=`basename $snap`
+		vol=`getVolume $snap`
+
+		if [ -e "$dst/$b_snap" ]; then
+			echo "$snap already synced"
+		else
+			echo "Syncing $snap"
+			debug "Send diff <$prev> <$vol> to <$dst>"
+			safe sudo btrfs send -p $prev $vol | safe sudo btrfs receive $dst
+			safe mkdir $dst/$b_snap
+		fi
+
+		prev=$vol
+	done
 }
 
 cmd=$1
@@ -104,6 +158,9 @@ case "$cmd" in
 		;;
 	"snapshot")
 		snapshot $@
+		;;
+	"sync")
+		syncsnaps $@
 		;;
 	*)
 		help
