@@ -105,15 +105,17 @@ ecryptfs_umount() {
 	[ -L ~/.ecryptfs/tmp.sig ] && safe rm ~/.ecryptfs/tmp.sig
 
 	safe ln -s $enc_sig ~/.ecryptfs/tmp.sig
-	echo "enc_root $name ecryptfs" > ~/.ecryptfs/tmp.conf
+	echo "$enc_root $name ecryptfs" > ~/.ecryptfs/tmp.conf
 	debug "Ecryptfs configuration linked"
 
-	safe umount.ecryptfs_private tmp
+	safe umount.ecryptfs_private -f tmp
 
 	safe rm ~/.ecryptfs/tmp.sig
 	safe rm ~/.ecryptfs/tmp.conf
 
 	debug "Volume umounted"
+
+	echo "Don't forget to clear your keys: \"keyctl clear @u\""
 }
 
 ecryptfs_home() {
