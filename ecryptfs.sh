@@ -102,6 +102,8 @@ ecryptfs_umount() {
 	enc_conf="$volume/conf"
 	enc_sig="$volume/sig"
 
+	safe mkdir -p ~/.ecryptfs
+
 	[ -L ~/.ecryptfs/tmp.sig ] && safe rm ~/.ecryptfs/tmp.sig
 
 	safe ln -s $enc_sig ~/.ecryptfs/tmp.sig
