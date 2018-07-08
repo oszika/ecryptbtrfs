@@ -30,6 +30,20 @@ create() {
 	ecryptfs_init $name $volume
 }
 
+home() {
+	arg=$1
+	name=`realpath $arg`
+	volume=`getVolume $name`
+
+	safe sudo mkdir -p "$volume"
+	debug "Volume $volume created"
+
+	safe sudo chown -R $USER:$USER $volume
+
+	ecryptfs_init $name $volume
+	ecryptfs_home $arg
+}
+
 list() {
 	find $1 -name "*.ecryptfs"
 }
@@ -40,6 +54,9 @@ shift
 case "$cmd" in
 	"create")
 		create $1
+		;;
+	"home")
+		home $1
 		;;
 	"mount")
 		ecryptfs_mount $1
