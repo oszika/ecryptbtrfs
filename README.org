@@ -107,7 +107,7 @@ ID 287 gen 103 top level 283 path volumes/voltest/.2017-06-11-09:21:44.ecryptfs
 #+END_SRC
 
 ** Create home encrypted volume
-*** Volume will be created using sudo to write on /home. Owner is reset to current user. Volume will be auto mounted at login.
+Volume will be created using sudo to write on /home. Owner is reset to current user. Volume will be auto mounted at login.
 #+BEGIN_SRC sh
 $ ebtrfs home /home/toto
 #+END_SRC
