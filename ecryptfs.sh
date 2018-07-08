@@ -58,8 +58,8 @@ ecryptfs_init() {
 	echo -e "$pass\n$pass" > $enc_sig
 	debug "Ecryptfs configuration written"
 
-	safe sudo chown -R $USER:users $name
-	safe sudo chown -R $USER:users $volume
+	safe sudo chown -R $USER:$USER $name
+	safe sudo chown -R $USER:$USER $volume
 	safe sudo chmod 500 $name
 	debug "User rights setted ($USER)"
 }

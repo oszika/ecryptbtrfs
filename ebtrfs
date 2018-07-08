@@ -136,6 +136,20 @@ syncsnaps() {
 	done
 }
 
+home() {
+	arg=$1
+	name=`realpath $arg`
+	volume=`getVolume $name`
+
+	safe sudo btrfs subvolume create "$volume"
+	debug "Subvolume $volume created"
+
+	safe sudo chown -R $USER:$USER $volume
+
+	ecryptfs_init $name $volume
+	ecryptfs_home $arg
+}
+
 cmd=$1
 shift
 
@@ -153,7 +167,7 @@ case "$cmd" in
 		ecryptfs_umount $1
 		;;
 	"home")
-		ecryptfs_home $1
+		home $1
 		;;
 	"list")
 		list $@
