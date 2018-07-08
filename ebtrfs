@@ -78,7 +78,7 @@ snapshot() {
 
 	safe mkdir -p $n_dst
 	safe chmod 500 $n_dst
-	safe btrfs subvolume snapshot $opts $v_src $v_dst
+	safe btrfs subvolume snapshot -r $opts $v_src $v_dst
 	sync
 }
 
