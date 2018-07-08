@@ -108,6 +108,7 @@ ID 287 gen 103 top level 283 path volumes/voltest/.2017-06-11-09:21:44.ecryptfs
 
 ** Create home encrypted volume
 Volume will be created using sudo to write on /home. Owner is reset to current user. Volume will be auto mounted at login.
+To use it, you need to install pam_mount.
 #+BEGIN_SRC sh
 $ ebtrfs home /home/toto
 #+END_SRC
@@ -118,4 +119,29 @@ Passphrase to wrap:
 Wrapping passphrase:
 Setting user pam conf
 [debug]	 Fstab updated
+#+END_SRC
+
+** Copy ssh public key on remote volume
+You need to copy ssh public key on encrypted and unencrypted (at start) volumes.
+First, copy key on encrypted volume
+#+BEGIN_SRC sh
+ssh-copy-id <dest>
+#+END_SRC
+Then, remount original home directory
+#+BEGIN_SRC sh
+$ ssh <dest>
+user@dest> sudo mount --bind / /mnt
+user@dest> sudo chmod u+w /mnt/home/<user>
+user@dest> mkdir -p /mnt/home/<user>/.ssh
+user@dest> sudo mount --bind /mnt/home/<user>/.ssh /home/<user>/.ssh
+#+END_SRC
+Copy key on unencrypted original directory
+#+BEGIN_SRC sh
+ssh-copy-id <dest>
+#+END_SRC
+Don't forget to unmount remounted directory
+#+BEGIN_SRC sh
+user@dest> sudo chmod u-w /mnt/home/<user>
+user@dest> sudo umount /home/<user>
+user@dest> sudo umount /mnt
 #+END_SRC
