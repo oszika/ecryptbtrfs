@@ -107,7 +107,8 @@ syncsnaps() {
 
 		# first sync
 		echo "Syncing $s_src/init"
-		safe sudo btrfs send $vol | safe sudo btrfs receive $dst
+		sudo btrfs send $vol | sudo btrfs receive $dst
+		[ $? -ne 0 ] && error "Can't sync $s_src/init"
 		safe mkdir $dst/init
 	else
 		echo "$s_src/init already synced"
@@ -128,7 +129,8 @@ syncsnaps() {
 		else
 			echo "Syncing $snap"
 			debug "Send diff <$prev> <$vol> to <$dst>"
-			safe sudo btrfs send -p $prev $vol | safe sudo btrfs receive $dst
+			sudo btrfs send -p $prev $vol | sudo btrfs receive $dst
+			[ $? -ne 0 ] && error "Can't sync $prev $vol to $dst"
 			safe mkdir $dst/$b_snap
 		fi
 
