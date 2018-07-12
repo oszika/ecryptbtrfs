@@ -8,6 +8,22 @@ source $dir/ecryptfs.sh
 
 # Btrfs commands
 
+help_syncsnap="sync <volsrc> <voldst>: sync all snapshots from source volume to destination volume"
+
+err_usage() {
+	error "Usage: $0 $@"
+}
+
+getBackup() {
+	base=`basename $1`
+	dir=`dirname $1`
+	echo "$dir/.$base.ecryptfs"
+}
+
+isBackup() {
+	btrfs property get -ts $1 | grep ro=true > /dev/null
+}
+
 help()
 {
 	name=`basename $0`
@@ -18,7 +34,7 @@ help()
 	echo -e "\t umount <volpath>:\tumount encrypted volume located at <volpath>"
 	echo -e "\t snapshot <volpath>:\tcreate snapshot of encrypted volume"
 	echo -e "\t list:\tlist encrypted volumes"
-	echo -e "\t sync <volsrc> <voldst>:\tsync all snapshots from source volume to destination volume"
+	echo -e "\t $help_syncsnap"
 	exit -1
 }
 
@@ -62,6 +78,8 @@ snapshot() {
 	v_src=`getVolume $n_src`
 	s_src=`getSnaps $n_src`
 
+	isBackup $v_src && error "Can't snapshot a backup"
+
 	# snaps path
 	mkdir -p $s_src
 
@@ -86,56 +104,63 @@ syncsnaps() {
 	src=$1
 	dst=$2
 
-	[ "$src" = "" ] && error "Empty source"
-	[ "$dst" = "" ] && error "Empty destination"
+	[ "$src" = "" ] && err_usage $help_syncsnap
+	[ "$dst" = "" ] && err_usage $help_syncsnap
 
-	s_src=`getSnaps $src`
+	# Sync snapshots
+	snaps_src=`getSnaps $src`
+	snaps_dst=`getSnaps $dst`
 
-	# Destination volume no exists
-	if [ ! -e $dst ]; then
-		safe btrfs subvolume create $dst
-	fi
+	# backup reference on latest snapshot, should be readonly
+	ref=`getBackup $dst`
+	[ ! -e $ref ] || [ -L $ref ] || error "$ref is not a readonly backup"
 
 	# First snapshot
-	if [ ! -e "$s_src/init" ]; then
+	if [ ! -e "$snaps_src/init" ]; then
 		snapshot -r $src
 	fi
 
 	# First sync
-	if [ ! -e $dst/init ]; then
-		vol=`getVolume $s_src/init`
+	safe mkdir -p $snaps_dst
+	if [ ! -e $snaps_dst/init ]; then
+		vol=`getVolume $snaps_src/init`
 
-		# first sync
-		echo "Syncing $s_src/init"
-		sudo btrfs send $vol | sudo btrfs receive $dst
-		[ $? -ne 0 ] && error "Can't sync $s_src/init"
-		safe mkdir $dst/init
-	else
-		echo "$s_src/init already synced"
+		echo "Sync $snaps_src/init"
+		sudo btrfs send $vol | sudo btrfs receive $snaps_dst
+		[ $? -ne 0 ] && error "Can't sync $snaps_src/init"
+
+		safe mkdir $snaps_dst/init
 	fi
 
-	# Sync others snapshots
-	prev="$s_src/.init.ecryptfs"
-	for snap in $s_src/*; do
-		if [ $snap = "$s_src/." ] || [ $snap = "$s_src/.." ] || [ $snap = "$s_src/init" ]; then
+	# Others sync
+	prev=`getVolume $snaps_src/init`
+	latest=`getVolume $snaps_dst/init`
+	for snap in $snaps_src/*; do
+		if [ $snap = "$snaps_src/." ] || [ $snap = "$snaps_src/.." ] || [ $snap = "$snaps_src/init" ]; then
 			continue
 		fi
 
-		b_snap=`basename $snap`
 		vol=`getVolume $snap`
 
-		if [ -e "$dst/$b_snap" ]; then
-			echo "$snap already synced"
-		else
-			echo "Syncing $snap"
-			debug "Send diff <$prev> <$vol> to <$dst>"
-			sudo btrfs send -p $prev $vol | sudo btrfs receive $dst
-			[ $? -ne 0 ] && error "Can't sync $prev $vol to $dst"
-			safe mkdir $dst/$b_snap
+		bn=`basename $snap`
+		backup="$snaps_dst/$bn"
+		latest=`getVolume $backup`
+
+		if [ ! -e "$backup" ]; then
+			echo "Sync $snap (diff $prev $vol)"
+			sudo btrfs send -p $prev $vol | sudo btrfs receive $snaps_dst
+			[ $? -ne 0 ] && error "Can't sync $prev $vol to $snaps_dst"
+
+			safe mkdir $backup
 		fi
 
 		prev=$vol
 	done
+
+	# Link last snapshot as latest
+	[ -e $ref ] && rm $ref
+	ln -v -s $latest $ref
+	mkdir -p $dst
 }
 
 home() {

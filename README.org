@@ -81,7 +81,7 @@ Create a readonly snapshot of '/volumes/.voltest.ecryptfs' in '/volumes/.voltest
 #+END_SRC
 
 ** Sync snapshots
-Sync snapshot between two volumes.
+Sync snapshot between two volumes. Synchronized volume is not really a btrfs volume but a link to latest snapshot.
 
 #+BEGIN_SRC sh
 $ ebtrfs sync /volumes/voltest /media/usb/voltest
