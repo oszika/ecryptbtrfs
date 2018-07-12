@@ -55,11 +55,30 @@ create() {
 }
 
 delete() {
-	name=`realpath $1`
-	volume=`getVolume $name`
+	arg=$1
 
-	safe btrfs subvolume delete "$volume"
-	safe rmdir $name
+	mount | grep "on $arg type ecryptfs" > /dev/null
+	[ $? -eq 0 ] && ecryptfs_umount $arg
+
+	# Snapshots
+	snaps=`getSnaps $arg`
+	if [ -e $snaps ]; then
+		safe sudo btrfs subvolume delete $snaps/.init.ecryptfs
+		safe sudo btrfs subvolume delete $snaps/.2*
+		safe rmdir $snaps/*
+		safe rmdir $snaps
+	fi
+
+	# Volume
+	volume=`getBackup $arg`
+	if [ -L $volume ]; then
+		safe rm $volume
+		safe rmdir $arg
+	else
+		volume=`getVolume $arg`
+		safe sudo btrfs subvolume delete $volume
+		safe rmdir $arg
+	fi
 
 	debug "Subvolume $volume deleted"
 }
